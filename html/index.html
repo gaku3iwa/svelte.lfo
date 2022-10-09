@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>SAMPLE</title>
+    <link rel=”shortcut icon” href=”./favicon.ico” />
+    <style>
+      table,
+      td,
+      th {
+        border: 1px #ff0000 solid;
+      }
+      .w150 {
+        width: 150px;
+      }
+      .b0r {
+        border: 0;
+        text-align: right;
+      }
+      .w100r {
+        width: 100px;
+        text-align: right;
+      }
+      .w150r {
+        width: 150px;
+        text-align: right;
+      }
+      .f70 {
+        font-size: 70%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button onclick="funcClick(1);">ビブラート</button>
+    <button onclick="funcClick(2);">トレモロ</button>
+    <button onclick="funcClick(9);">発音停止</button>
+    <br />
+    <br />
+
+    <fieldset>
+      <legend>Base Effect Parameters</legend>
+      <table>
+        <tr>
+          <td class="w150">Tone Frequency</td>
+          <td class="w100r">
+            <input
+              id="val_frequency"
+              type="text"
+              size="3"
+              class="b0r"
+            />
+          </td>
+          <td class="w150 f70">[Hz]</td>
+        </tr>
+        <tr>
+          <td class="w150">Speed</td>
+          <td class="w100r">
+            <input
+              id="val_speed_of_effect"
+              type="text"
+              size="5"
+              class="b0r"
+            />
+          </td>
+          <td class="w150 f70">[Hz]</td>
+        </tr>
+        <tr>
+          <td class="w150">Delay</td>
+          <td class="w100r">
+            <input
+              id="val_delay_of_effect"
+              type="text"
+              size="3"
+              class="b0r"
+            />
+          </td>
+          <td class="w150 f70">[sec]</td>
+        </tr>
+        <tr>
+          <td class="w150">Stop</td>
+          <td class="w100r">
+            <input
+              id="val_stop_of_effect"
+              type="text"
+              size="3"
+              class="b0r"
+            />
+          </td>
+          <td class="w150 f70">[sec]</td>
+        </tr>
+      </table>
+    </fieldset>
+
+    <br />
+
+    <fieldset>
+      <legend>Vibrato Parameters</legend>
+      <table>
+        <tr>
+          <td class="w150">Depth</td>
+          <td class="w100r">
+            ±
+            <input
+              id="val_depth_of_vibrato"
+              type="text"
+              size="3"
+              class="b0r"
+            />
+          </td>
+          <td class="w150 f70">[Hz]</td>
+        </tr>
+      </table>
+    </fieldset>
+
+    <br />
+
+    <fieldset>
+      <legend>Tremolo Parameters</legend>
+      <table>
+        <tr>
+          <td class="w150">Amplitude</td>
+          <td class="w100r">
+            <input
+              id="val_amplitude_of_tremolo"
+              type="text"
+              size="3"
+              class="b0r"
+            />
+          </td>
+          <td class="w150r f70">[min] 0.0 ～ 1.0 [max]</td>
+        </tr>
+        <tr>
+          <td class="w150">Depth</td>
+          <td class="w100r">
+            ±
+            <input
+              id="val_depth_of_tremolo"
+              type="text"
+              size="3"
+              class="b0r"
+            />
+          </td>
+          <td class="w150r f70">[Amplitude ± Depth]</td>
+        </tr>
+      </table>
+    </fieldset>
+  </body>
+
+  <script>
+    //-----------------------------------------------------------------------------
+    //  global variable
+    let mastervolume = null; //  gain
+    let osc = null; //  osc
+    let amp = null; //  gain
+    let dep = null; //  gain
+    let lfo = null; //  osc
+    let param = {
+      mastervolume: 0.1,
+      frequency: 440,
+      speed: 8,
+      delay: 2.5,
+      stop: 5,
+      depth: 10,
+      amplitude: 1,
+    };
+
+    //--------------------------------------------------------------------------
+    // Set Default Values
+    // prettier-ignore
+    {
+      document.getElementById("val_frequency"           ).value = param.frequency;
+      document.getElementById("val_speed_of_effect"     ).value = param.speed;
+      document.getElementById("val_delay_of_effect"     ).value = param.delay;
+      document.getElementById("val_stop_of_effect"      ).value = param.stop;
+      document.getElementById("val_depth_of_vibrato"    ).value = param.depth;
+      document.getElementById("val_amplitude_of_tremolo").value = param.amplitude;
+      document.getElementById("val_depth_of_tremolo"    ).value = 0.5;
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    function funcClick(val = 9) {
+      // prettier-ignore
+      {
+            param.frequency = document.getElementById("val_frequency"           ).value || param.frequency;
+            param.speed     = document.getElementById("val_speed_of_effect"     ).value || param.speed;
+            param.delay     = document.getElementById("val_delay_of_effect"     ).value || param.delay;
+            param.stop      = document.getElementById("val_stop_of_effect"      ).value || param.stop;
+      }
+
+      switch (val) {
+        case 1:
+          // prettier-ignore
+          {
+            param.depth     = document.getElementById("val_depth_of_vibrato"    ).value || param.depth;
+          }
+          funcVibrato(param);
+          break;
+        case 2:
+          // prettier-ignore
+          {
+            param.amplitude = document.getElementById("val_amplitude_of_tremolo").value || param.amplitude;
+            param.depth     = document.getElementById("val_depth_of_tremolo"    ).value || param.depth;
+          }
+          funcTremolo(param);
+          break;
+        default:
+          funcOFF();
+          break;
+      }
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    function funcOFF() {
+      // Stop Sound
+      if (osc !== null) osc.stop(0);
+
+      // Stop Effect
+      if (lfo !== null) lfo.stop(0);
+
+      mastervolume = null; //  gain
+      osc = null; //  osc
+      lfo = null; //  osc
+      dep = null; //  gain
+      amp = null; //  gain
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    function funcVibrato(param) {
+      window.AudioContext = window.AudioContext || window.webkitAudioContext;
+
+      // Create the instance of AudioContext
+      let context = new AudioContext();
+
+      // Note Off
+      funcOFF();
+
+      // Create the instance of Node
+      mastervolume = context.createGain(); // for Volume
+      osc = context.createOscillator(); // for Input
+      lfo = context.createOscillator(); // for LFO
+      dep = context.createGain(); // for LFO
+
+      // Clear connection
+      mastervolume.disconnect(0);
+      osc.disconnect(0);
+      lfo.disconnect(0);
+      dep.disconnect(0);
+
+      // Connect nodes for effect sound
+      mastervolume.connect(context.destination);
+      osc.connect(mastervolume);
+      dep.connect(osc.frequency);
+      lfo.connect(dep);
+
+      // Set parameters
+      osc.type = "square";
+      osc.frequency.value = param.frequency;
+
+      // Set Master Volume  [vol]
+      mastervolume.gain.value = param.mastervolume;
+
+      // Set Speed          [Hz]
+      lfo.frequency.value = param.speed;
+
+      // Set Depth          [Hz][osc ± dep]
+      dep.gain.value = param.depth;
+
+      // Start Sound
+      osc.start(0);
+
+      // Start Effect
+      lfo.start(param.delay);
+
+      // Start Sound & Effect
+      lfo.stop(param.stop);
+      osc.stop(param.stop);
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    function funcTremolo(param) {
+      window.AudioContext = window.AudioContext || window.webkitAudioContext;
+
+      // Create the instance of AudioContext
+      let context = new AudioContext();
+
+      // Note Off
+      funcOFF();
+
+      // Create the instance of Node
+      mastervolume = context.createGain(); // for Volume
+      osc = context.createOscillator(); // for Input
+      lfo = context.createOscillator(); // for LFO
+      dep = context.createGain(); // for LFO
+      amp = context.createGain(); // for Tremolo
+
+      // Clear connection
+      mastervolume.disconnect(0);
+      osc.disconnect(0);
+      lfo.disconnect(0);
+      dep.disconnect(0);
+      amp.disconnect(0);
+
+      // Connect nodes for effect sound
+      mastervolume.connect(context.destination);
+      amp.connect(mastervolume);
+      osc.connect(amp);
+
+      // Connect nodes for LFO that changes Amplitude periodically
+      dep.connect(amp.gain);
+      lfo.connect(dep);
+
+      // Set parameters
+      osc.type = "square";
+      osc.frequency.value = param.frequency;
+
+      // Set Master Volume  [vol]
+      mastervolume.gain.value = param.mastervolume;
+
+      // Set Speed          [Hz]
+      lfo.frequency.value = param.speed;
+
+      // Set Base Value     [vol][amp ± dep]
+      amp.gain.value = param.amplitude;
+
+      // Set Depth          [vol][amp ± dep]
+      dep.gain.value = param.depth;
+
+      // Start Sound
+      osc.start(0);
+
+      // Start Effect
+      lfo.start(param.delay);
+
+      // Stop Sound & Effect
+      lfo.stop(param.stop);
+      osc.stop(param.stop);
+    }
+  </script>
+</html>
