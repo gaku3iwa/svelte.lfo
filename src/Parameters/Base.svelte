@@ -16,7 +16,12 @@
 		<tr>
 			<td class="f90"> Frequency </td>
 			<td class="r">
-				<input class="b0r" type="number" bind:value={p.frequency} min="0" />
+				<input
+					class="b0r"
+					type="number"
+					bind:value={p.frequency}
+					min="0"
+				/>
 			</td>
 			<td class="f80"> [Hz] </td>
 		</tr>
